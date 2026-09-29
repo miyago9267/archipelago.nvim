@@ -1,0 +1,86 @@
+*archipelago.txt*  Multi-root workspaces, compatible with VSCode .code-workspace
+
+==============================================================================
+CONTENTS                                                *archipelago*
+
+  1. Introduction ............ |archipelago-intro|
+  2. Setup ................... |archipelago-setup|
+  3. Commands ................ |archipelago-commands|
+  4. Integrations ............ |archipelago-integrations|
+  5. Lua API ................. |archipelago-api|
+
+==============================================================================
+1. INTRODUCTION                                         *archipelago-intro*
+
+Opening a workspace builds a hub directory with one symlink per folder and
+changes the cwd to it, so file trees, pickers and terminal agents see every
+folder. Buffer names and copied paths are always real paths.
+
+==============================================================================
+2. SETUP                                                *archipelago-setup*
+
+>lua
+  require("archipelago").setup({
+    store_dir = vim.fn.stdpath("data") .. "/archipelago",
+    hub_dir = vim.fn.stdpath("state") .. "/archipelago",
+    auto_open = true,
+    popup_menu = true,
+    notify_on_copy = true,
+  })
+<
+
+==============================================================================
+3. COMMANDS                                             *archipelago-commands*
+
+:Workspace open [name|path]                             *:Workspace*
+    Open a named workspace from `store_dir` or a `.code-workspace` file.
+    Without an argument, pick one with |vim.ui.select()|.
+:Workspace new {name}
+    Create a workspace from the current file's git root (or cwd) and open it.
+:Workspace add [dir]
+    Add a folder. Defaults to the directory under the cursor in the file
+    tree, else the current file's git root. Without an open workspace,
+    starts an untitled one (current project + the folder) without asking.
+:Workspace save [name]
+    Save to `store_dir`, asking for a name only when none is given.
+:Workspace remove [name]
+    Remove a folder by its name in the hub.
+:Workspace list
+    List the folders of the open workspace.
+:Workspace close
+    Close the workspace and return to the previous cwd. An untitled
+    workspace is discarded.
+
+:[range]CopyPath                                        *:CopyPath*
+    Copy the real absolute path. A range appends `:l` or `:l1-l2`.
+:[range]CopyRelativePath                                *:CopyRelativePath*
+    Copy the path relative to cwd; inside a workspace `<folder>/<path>`.
+
+==============================================================================
+4. INTEGRATIONS                                     *archipelago-integrations*
+
+nvim-tree: use `require("archipelago.integrations.nvim-tree").exclude` as
+`update_focused_file.exclude` and `.on_attach` (or `.map_copy(bufnr)`).
+
+fzf-lua: `require("archipelago.integrations.fzf-lua")` provides `files`,
+`live_grep`, `grep_cword`, `grep_visual` and `opts(kind)`.
+
+Events: `User ArchipelagoOpen`, `User ArchipelagoChanged`,
+`User ArchipelagoClose`.
+
+==============================================================================
+5. LUA API                                              *archipelago-api*
+
+require("archipelago").open({target})
+require("archipelago").close()
+require("archipelago").create({name}, [{dir}])
+require("archipelago").add([{dir}])
+require("archipelago").remove({name})
+require("archipelago").save([{name}])
+require("archipelago").list()               names in `store_dir`
+require("archipelago").status()             open workspace name or nil
+require("archipelago").to_hub({path})       real path -> hub path or nil
+require("archipelago").path_for({buf}, {kind})   "absolute" | "relative"
+require("archipelago").copy_path({kind}, [{range}])
+
+ vim:tw=78:ts=8:ft=help:norl:
